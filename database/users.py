@@ -48,3 +48,22 @@ def get_user_by_telegram_id(telegram_id):
     except Exception as e:
         logger.error(f"Error in get_user_by_telegram_id: {str(e)}")
 
+def get_all_club_users():
+    """
+    Возвращает список пользователей, у которых is_itmo = true и поле isu_code заполнено.
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = """
+            SELECT * FROM users
+            WHERE is_itmo = true
+              AND isu_code IS NOT NULL
+              AND TRIM(isu_code) <> '';
+        """
+        cur.execute(query)
+        users = cur.fetchall()
+        logger.info(f"Fetched {len(users)} club users.")
+        return users
+    except Exception as e:
+        logger.error(f"Error in get_all_club_users: {str(e)}")
+        raise

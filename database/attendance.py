@@ -25,3 +25,18 @@ def add_attendance(user_id, lesson_id):
         logger.error(f"Error in add_attendance: {str(e)}")
         raise
 
+def get_attendance_by_lesson(lesson_id):
+    """
+    Возвращает список записей участия для заданного занятия.
+    Каждая запись содержит (user_id, confirmed_at).
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = "SELECT user_id, confirmed_at FROM attendance WHERE lesson_id = %s;"
+        cur.execute(query, (lesson_id,))
+        records = cur.fetchall()
+        logger.info(f"Fetched {len(records)} attendance records for lesson {lesson_id}.")
+        return records
+    except Exception as e:
+        logger.error(f"Error in get_attendance_by_lesson: {str(e)}")
+        raise

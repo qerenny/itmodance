@@ -31,16 +31,23 @@ async def start_add_lesson(message):
     admin_lesson_states[chat_id] = {"step": "title", "data": {}}
     await bot.send_message(chat_id, "Введите название занятия:")
 
-@bot.message_handler(func=lambda message: message.chat.id in admin_lesson_states)
 @log_function_call(logger)
+@bot.message_handler(func=lambda message: message.chat.id in admin_lesson_states)
 async def process_lesson_input(message):
     """
     Обрабатывает ввод администратора для добавления занятия по шагам.
+    Перед каждым шагом проверяется, что пользователь является администратором.
     """
     chat_id = message.chat.id
+    if message.from_user.id not in BOT_ADMIN_IDS:
+        await bot.send_message(chat_id, "У вас нет прав для выполнения этой команды.")
+        # Если вдруг неадмин каким-либо образом оказался в состоянии, очищаем его.
+        admin_lesson_states.pop(chat_id, None)
+        return
+
     state = admin_lesson_states.get(chat_id)
     if not state:
-        return  # Если по какой-то причине состояние не найдено, ничего не делаем
+        return  # Если состояние отсутствует, ничего не делаем
 
     current_step = state.get("step")
     text = message.text.strip()
@@ -93,4 +100,4 @@ async def process_lesson_input(message):
             logger.error(f"Error adding lesson: {str(e)}")
             await bot.send_message(chat_id, "Произошла ошибка при добавлении занятия.")
         # Очищаем состояние для данного чата.
-        del admin_lesson_states[chat_id]
+        admin_lesson_states.pop(chat_id, None)
