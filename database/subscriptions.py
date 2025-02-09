@@ -68,3 +68,44 @@ def update_subscription_end_date(subscription_id, new_end_date):
         conn.rollback()
         logger.error(f"Error updating subscription {subscription_id}: {str(e)}")
         raise
+    
+def get_subscriptions_expiring_tomorrow():
+    """
+    Возвращает список подписок, у которых дата окончания (end_date) равна завтрашней дате.
+    Результатом является список кортежей: (id, user_id, end_date)
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = """
+            SELECT id, user_id, end_date
+            FROM subscriptions
+            WHERE end_date::date = (CURRENT_DATE + INTERVAL '1 day');
+        """
+        cur.execute(query)
+        subs = cur.fetchall()
+        logger.info(f"Fetched {len(subs)} subscriptions expiring tomorrow.")
+        return subs
+    except Exception as e:
+        logger.error(f"Error in get_subscriptions_expiring_tomorrow: {str(e)}")
+        raise
+    
+def get_all_active_subscription_users():
+    """
+    Возвращает список уникальных user_id для пользователей, у которых есть активная подписка.
+    Активная подписка считается, если end_date > NOW().
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = """
+            SELECT DISTINCT user_id
+            FROM subscriptions
+            WHERE end_date > NOW();
+        """
+        cur.execute(query)
+        rows = cur.fetchall()
+        user_ids = [row[0] for row in rows]
+        logger.info(f"Fetched {len(user_ids)} active subscription users.")
+        return user_ids
+    except Exception as e:
+        logger.error(f"Error in get_all_active_subscription_users: {str(e)}")
+        raise
