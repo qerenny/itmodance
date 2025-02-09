@@ -10,6 +10,7 @@ from bot.donation import show_donation_options
 from bot.subscription import show_subscription_options
 from utils.logging_utils import log_function_call, setup_logger
 from bot.user_info import prompt_for_name, prompt_for_gender
+from bot.itmo import prompt_for_itmo_status, prompt_for_isu
 
 logger = setup_logger('start', 'bot.log')
 
@@ -41,6 +42,8 @@ async def send_start(message):
     first_name = user[3]
     last_name = user[4]
     gender = user[5]
+    is_itmo = user[7]
+    isu_code = user[8]
 
     if consent_timestamp is None:
         await ask_for_consent(message.chat.id)
@@ -52,6 +55,14 @@ async def send_start(message):
 
     if not gender:
         await prompt_for_gender(message.chat.id)
+        return
+    
+    if not is_itmo:  # если поле is_itmo ещё не заполнено
+        await prompt_for_itmo_status(message.chat.id)
+        return
+    
+    if is_itmo is True and (isu_code is None or not str(isu_code).strip()):
+        await prompt_for_isu(message.chat.id)
         return
 
     await bot.send_message(message.chat.id, "Добро пожаловать! Все данные заполнены, продолжаем работу с ботом.")

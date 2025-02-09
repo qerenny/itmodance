@@ -18,7 +18,7 @@ def create_tables():
                 last_name TEXT,
                 gender TEXT,
                 consent_timestamp TIMESTAMP,  -- момент подтверждения согласия
-                is_itmo BOOLEAN DEFAULT FALSE,
+                is_itmo BOOLEAN,
                 isu_code TEXT,                -- 6-значный код, если применимо
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()

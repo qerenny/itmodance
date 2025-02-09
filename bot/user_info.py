@@ -71,7 +71,7 @@ async def handle_name_input(message):
         user = get_user_by_telegram_id(chat_id)
         if user is None:
             # Если по какой-то причине запись отсутствует, создаем новую.
-            add_user(chat_id, message.from_user.username, first_name, last_name, None, None, False, None)
+            add_user(chat_id, message.from_user.username, first_name, last_name, None, None, None, None)
         else:
             # Обновляем запись, сохраняя уже имеющиеся значения для остальных полей.
             add_user(
@@ -106,7 +106,7 @@ async def handle_gender_selection(call):
     try:
         user = get_user_by_telegram_id(chat_id)
         if user is None:
-            add_user(chat_id, call.from_user.username, None, None, gender, None, False, None)
+            add_user(chat_id, call.from_user.username, None, None, gender, None, None, None)
         else:
             add_user(
                 chat_id,
