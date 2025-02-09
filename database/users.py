@@ -67,3 +67,24 @@ def get_all_club_users():
     except Exception as e:
         logger.error(f"Error in get_all_club_users: {str(e)}")
         raise
+
+def get_user_by_id(user_id):
+    """
+    Получает информацию о пользователе по его первичному ключу (id).
+    Возвращает кортеж: (id, telegram_id, username, first_name, last_name, gender, ...)
+    Если пользователь не найден, возвращает None.
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = """
+            SELECT id, telegram_id, username, first_name, last_name, gender
+            FROM users
+            WHERE id = %s;
+        """
+        cur.execute(query, (user_id,))
+        user = cur.fetchone()
+        logger.info(f"Fetched user by id {user_id}: {user}")
+        return user
+    except Exception as e:
+        logger.error(f"Error in get_user_by_id: {str(e)}")
+        raise

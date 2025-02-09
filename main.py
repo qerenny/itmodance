@@ -2,7 +2,7 @@
 import asyncio
 from bot.bot import bot
 from utils.logging_utils import setup_logger
-from bot import start, payment, donation, subscription, consent, user_info, admin_lessons, club_notifications, itmo, attendance
+from bot import start, payment, donation, subscription, consent, admin_attendance, user_info, admin_lessons, club_notifications, itmo, attendance
 from middleware.connection import login_db, logout
 import datetime
 from bot.club_notifications import notify_club_lessons
@@ -51,7 +51,7 @@ async def run_bot():
             logger.info("Starting bot polling with established DB connection...")
             await asyncio.gather(
                 bot.polling(),
-                run_test_notifications_every_minute()
+                run_daily_notifications_at_10()
             )
         except Exception as e:
             logger.error(f"Bot polling error: {str(e)}")

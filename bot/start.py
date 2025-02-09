@@ -65,13 +65,12 @@ async def send_start(message):
         await prompt_for_isu(message.chat.id)
         return
 
-    await bot.send_message(message.chat.id, "Добро пожаловать! Все данные заполнены, продолжаем работу с ботом.")
-    # try:
-    #     await send_main_menu(message)
+    try:
+        await send_main_menu(message)
 
-    # except Exception as e:
-    #     logger.exception(f"Unhandled error in send_start for chat_id={telegram_id}: {str(e)}")
-    #     raise
+    except Exception as e:
+        logger.exception(f"Unhandled error in send_start for chat_id={telegram_id}: {str(e)}")
+        raise
 
 @log_function_call(logger)
 async def send_main_menu(message):

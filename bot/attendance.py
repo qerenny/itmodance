@@ -6,6 +6,7 @@ from database.attendance import add_attendance, get_attendance_by_lesson
 from database.users import get_user_by_telegram_id
 from utils.config import BOT_ADMIN_IDS
 from utils.logging_utils import log_function_call, setup_logger
+from bot.admin_attendance import send_future_lessons_for_stats
 
 logger = setup_logger('attendance', 'attendance.log')
 
@@ -59,42 +60,16 @@ async def handle_attendance_confirmation(call):
         
 @bot.message_handler(commands=['attendance_stats'])
 @log_function_call(logger)
-async def attendance_stats(message):
+async def attendance_stats_command(message):
     """
-    Команда для администратора для получения статистики по подтверждённым участникам занятия.
-    Ожидается, что сообщение будет вида: /attendance_stats <lesson_id>
+    Команда для администратора: /attendance_stats
+    Отправляет сообщение с кнопками для выбора будущего занятия, по которому нужно получить статистику.
     """
     chat_id = message.chat.id
+    # Можно проверить, что отправитель – администратор:
+    from utils.config import BOT_ADMIN_IDS
     if message.from_user.id not in BOT_ADMIN_IDS:
         await bot.send_message(chat_id, "У вас нет прав для выполнения этой команды.")
         return
 
-    parts = message.text.split()
-    if len(parts) < 2:
-        await bot.send_message(chat_id, "Пожалуйста, укажите ID занятия. Пример: /attendance_stats 5")
-        return
-
-    try:
-        lesson_id = int(parts[1])
-    except ValueError:
-        await bot.send_message(chat_id, "Некорректный ID занятия. Он должен быть числом.")
-        return
-
-    try:
-        records = get_attendance_by_lesson(lesson_id)
-        if not records:
-            await bot.send_message(chat_id, f"Для занятия с ID {lesson_id} подтверждений участия не найдено.")
-            return
-
-        text = f"Статистика участия для занятия ID {lesson_id}:\n"
-        count = 0
-        for record in records:
-            user_id = record[0]
-            confirmed_at = record[1]
-            text += f"- Пользователь {user_id}, подтверждено: {confirmed_at}\n"
-            count += 1
-        text += f"Всего подтверждений: {count}"
-        await bot.send_message(chat_id, text)
-    except Exception as e:
-        logger.error(f"Ошибка при получении статистики участия для занятия {lesson_id}: {str(e)}")
-        await bot.send_message(chat_id, "Ошибка при получении статистики участия.")
+    await send_future_lessons_for_stats(chat_id)

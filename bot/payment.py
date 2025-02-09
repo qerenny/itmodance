@@ -5,6 +5,10 @@ from const.const_bot import CURRENCY
 from utils import json_fun
 from utils.logging_utils import log_function_call, setup_logger
 from utils.config import BOT_TEST_PROVIDER_TOKEN, BOT_LIVE_PROVIDER_TOKEN, BOT_ADMIN_IDS
+import datetime
+from dateutil.relativedelta import relativedelta
+from database.subscriptions import add_subscription, get_active_subscription, update_subscription_end_date
+from database.users import get_user_by_telegram_id
 
 logger = setup_logger('payments', 'payment.log')
 
@@ -99,6 +103,8 @@ async def successful_payment(message):
             )
             
         if payment_payload.startswith('S'):
+            await subscription_handler(payment_payload, payment_amount, payment_currency, tg_id)
+            
             await bot.send_message(
                 chat_id=BOT_ADMIN_IDS[1],
                 text=f'Оплата подписки в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
@@ -137,4 +143,65 @@ async def unsuccessful_payment(message):
 
     except Exception as e:
         logger.error(f"Unhandled error in unsuccessful_payment for tg_id={tg_id}: {str(e)}")
+        raise
+    
+    
+async def subscription_handler(payment_payload, payment_amount, payment_currency, tg_id):
+    """
+    Обрабатывает интеграцию подписки после успешного платежа.
+    Если у пользователя уже есть активная подписка, то дата окончания обновляется
+    (расширяется на новый период); иначе создается новая подписка.
+    """
+    try:
+        # Определяем длительность подписки по типу
+        if payment_payload == 'S1':
+            months = 1
+        elif payment_payload == 'S2':
+            months = 2
+        elif payment_payload == 'S3':
+            months = 3
+        else:
+            months = 1  # значение по умолчанию
+        logger.info(f"Определена длительность подписки: {months} месяц(ев) для payload '{payment_payload}'.")
+
+        now = datetime.datetime.now()
+
+        subscription_payment_info = {
+            "amount": payment_amount,
+            "currency": payment_currency,
+            "payload": payment_payload
+        }
+        logger.info(f"Информация о платеже подписки: {subscription_payment_info}.")
+
+        # Получаем запись пользователя по Telegram ID
+        user = get_user_by_telegram_id(tg_id)
+        if user is not None:
+            user_pk = user[0]  # первичный ключ в таблице users
+            active_sub = get_active_subscription(user_pk)
+            if active_sub is not None:
+                # Если активная подписка есть, берем базовую дату для обновления:
+                # Если текущая end_date меньше now, берем now, иначе берем текущую end_date.
+                current_end_date = active_sub[2]
+                base_date = now if current_end_date < now else current_end_date
+                new_end_date = base_date + relativedelta(months=months)
+                update_subscription_end_date(active_sub[0], new_end_date)
+                logger.info(f"Подписка для user_pk {user_pk} обновлена, новое окончание: {new_end_date}.")
+                await bot.send_message(
+                    tg_id,
+                    f"Ваша подписка обновлена до {new_end_date.strftime('%Y-%m-%d %H:%M:%S')}."
+                )
+            else:
+                # Если активной подписки нет, создаем новую
+                start_date = now
+                end_date = start_date + relativedelta(months=months)
+                add_subscription(user_pk, start_date, end_date, subscription_payment_info)
+                logger.info(f"Новая подписка добавлена для user_pk {user_pk} с окончанием {end_date}.")
+                await bot.send_message(
+                    tg_id,
+                    f"Ваша подписка оформлена до {end_date.strftime('%Y-%m-%d %H:%M:%S')}."
+                )
+        else:
+            logger.error(f"Пользователь с Telegram ID {tg_id} не найден при оформлении подписки.")
+    except Exception as e:
+        logger.error(f"Ошибка в subscription_handler: {str(e)}")
         raise

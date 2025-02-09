@@ -41,3 +41,25 @@ def get_lessons_by_date(date_obj, lesson_type):
     except Exception as e:
         logger.error(f"Error in get_lessons_by_date: {str(e)}")
         raise
+    
+def get_future_lessons():
+    """
+    Возвращает список будущих занятий (начиная с текущей даты).
+    Предполагается, что таблица lessons имеет столбцы:
+      id, title, lesson_date, lesson_time, place, ...
+    """
+    tunnel, conn, cur = const.const_db.TUNNEL, const.const_db.CONN, const.const_db.CUR
+    try:
+        query = """
+            SELECT id, title, lesson_date, lesson_time, place
+            FROM lessons
+            WHERE lesson_date >= CURRENT_DATE
+            ORDER BY lesson_date ASC;
+        """
+        cur.execute(query)
+        lessons = cur.fetchall()
+        logger.info(f"Fetched {len(lessons)} future lessons.")
+        return lessons
+    except Exception as e:
+        logger.error(f"Error in get_future_lessons: {str(e)}")
+        raise
