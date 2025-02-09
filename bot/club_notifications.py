@@ -3,8 +3,9 @@ import datetime
 from bot.bot import bot
 from database.lessons import get_lessons_by_date
 from database.users import get_all_club_users
-from database.notifications import add_notification
+from database.notifications import add_notification, notification_exists
 from utils.logging_utils import setup_logger, log_function_call
+from bot.attendance import send_attendance_notification
 
 logger = setup_logger('club_notifications', 'club_notifications.log')
 
@@ -34,7 +35,7 @@ async def notify_club_lessons():
     """
     Для всех клубных занятий, которые пройдут завтра, отправляет уведомление всем пользователям,
     у которых заполнен ИСУ (то есть они являются студентами ИТМО).
-    Для каждого уведомления также регистрируется запись в таблице notifications.
+    Если уведомление уже отправлено, повторно его не рассылаем и не добавляем запись.
     """
     tomorrow = get_tomorrow_date()
     lessons = get_club_lessons_for_date(tomorrow)
@@ -58,10 +59,14 @@ async def notify_club_lessons():
         lesson_info = f"{title} {lesson_date} в {lesson_time} (место: {place})"
         for user in club_users:
             # Структура user: [id, telegram_id, username, first_name, last_name, ...]
-            user_id = user[0]         # первичный ключ из таблицы users
+            user_pk = user[0]         # первичный ключ (user_id) из таблицы users
             telegram_id = user[1]     # Telegram ID для отправки сообщения
+            # Если уведомление уже отправлено, пропускаем отправку
+            if notification_exists(user_pk, lesson_id, "club"):
+                logger.info(f"Notification already sent for user {user_pk} for lesson {lesson_id}. Skipping.")
+                continue
             try:
-                await bot.send_message(telegram_id, f"Напоминаем: завтра состоится клубное занятие:\n{lesson_info}")
-                add_notification(user_id, "club", lesson_id)
+                await send_attendance_notification(telegram_id, lesson_id, lesson_info)
+                add_notification(user_pk, "club", lesson_id)
             except Exception as e:
-                logger.error(f"Error notifying user {telegram_id} (user_id {user_id}) for lesson {lesson_id}: {str(e)}")
+                logger.error(f"Error notifying user {telegram_id} (user_id {user_pk}) for lesson {lesson_id}: {str(e)}")

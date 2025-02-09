@@ -28,7 +28,9 @@ async def send_attendance_notification(chat_id: int, lesson_id: int, lesson_info
 async def handle_attendance_confirmation(call):
     """
     Обрабатывает нажатие кнопки подтверждения участия.
-    Из callback_data извлекается идентификатор занятия, затем регистрируется участие.
+    Из callback_data извлекается идентификатор занятия, затем регистрируется участие,
+    используя первичный ключ пользователя из таблицы users. После успешной регистрации
+    удаляется сообщение с кнопкой.
     """
     chat_id = call.message.chat.id
     user = get_user_by_telegram_id(chat_id)
@@ -44,13 +46,17 @@ async def handle_attendance_confirmation(call):
         return
 
     try:
-        add_attendance(chat_id, lesson_id)
+        # Используем первичный ключ пользователя (первый элемент записи)
+        user_pk = user[0]
+        add_attendance(user_pk, lesson_id)
+        # Удаляем исходное сообщение с кнопкой
+        await bot.delete_message(chat_id, call.message.message_id)
         await bot.answer_callback_query(call.id, "Ваше участие подтверждено!")
         await bot.send_message(chat_id, "Спасибо, ваше участие зафиксировано.")
     except Exception as e:
         logger.error(f"Ошибка регистрации участия для пользователя {chat_id}, занятие {lesson_id}: {str(e)}")
         await bot.answer_callback_query(call.id, "Ошибка при регистрации участия. Попробуйте позже.")
-
+        
 @bot.message_handler(commands=['attendance_stats'])
 @log_function_call(logger)
 async def attendance_stats(message):
