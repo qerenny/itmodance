@@ -1,0 +1,15 @@
+{
+  "receipt": {
+    "items": [
+      {
+      "description": "",
+      "quantity": "1.00",
+      "amount": {
+        "value": "",
+        "currency": "RUB"
+      },
+        "vat_code": 1
+      }
+    ]
+  }
+}
