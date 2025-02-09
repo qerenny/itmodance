@@ -7,7 +7,7 @@ from const.const_bot import (
     DONATION, SUBSCRIPTION
 )
 from bot.donation import show_donation_options
-from bot.subscription import show_subscription_options
+from bot.subscription_fun.subscription import show_subscription_options
 from utils.logging_utils import log_function_call, setup_logger
 from bot.user_info import prompt_for_name, prompt_for_gender
 from bot.itmo import prompt_for_itmo_status, prompt_for_isu

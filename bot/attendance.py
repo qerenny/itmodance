@@ -6,7 +6,7 @@ from database.attendance import add_attendance, get_attendance_by_lesson
 from database.users import get_user_by_telegram_id
 from utils.config import BOT_ADMIN_IDS
 from utils.logging_utils import log_function_call, setup_logger
-from bot.admin_attendance import send_future_lessons_for_stats
+from bot.admin_fun.admin_attendance import send_future_lessons_for_stats
 
 logger = setup_logger('attendance', 'attendance.log')
 

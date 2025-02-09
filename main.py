@@ -1,13 +1,14 @@
 # main.py
 import asyncio
+from bot.admin_fun import admin_attendance, admin_lessons
 from bot.bot import bot
 from utils.logging_utils import setup_logger
-from bot import start, payment, donation, subscription, consent, admin_attendance, user_info, admin_lessons, club_notifications, itmo, attendance, subscription_expiry
+from bot import start, payment, donation, consent, user_info, club_notifications, itmo, attendance
 from middleware.connection import login_db, logout
 import datetime
 from bot.club_notifications import notify_club_lessons
-from bot.subscription_expiry import notify_expiring_subscriptions
-from bot.subscription_notifications import notify_subscription_lessons
+from bot.subscription_fun.subscription_expiry import notify_expiring_subscriptions
+from bot.subscription_fun.subscription_notifications import notify_subscription_lessons
 
 logger = setup_logger('main', 'main.log')
 
