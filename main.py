@@ -1,29 +1,26 @@
-#main.py
+# main.py
 import asyncio
-
 from bot.bot import bot
-import utils.config
 from utils.logging_utils import setup_logger
-from bot import start, payment, donation
+from bot import start, payment, donation, subscription, consent, user_info
+from middleware.connection import login_db, logout
+
 logger = setup_logger('main', 'main.log')
 
 async def run_bot():
-    """
-    Runs the Telegram bot with automatic reconnection and reminder task.
-    """
     while True:
         try:
-            logger.info("Starting bot polling...")
+            # Устанавливаем соединение один раз
+            login_db()
+            logger.info("Starting bot polling with established DB connection...")
             await bot.polling()
         except Exception as e:
             logger.error(f"Bot polling error: {str(e)}")
             logger.info("Attempting to restart bot in 5 seconds...")
             await asyncio.sleep(5)
+        # Если бот перезапускается, соединение будет переиспользовано до явного logout().
 
 def main():
-    """
-    Main entry point to run the asynchronous bot.
-    """
     logger.info("Bot main function started.")
     try:
         asyncio.run(run_bot())
@@ -32,6 +29,8 @@ def main():
     except Exception as e:
         logger.error(f"Critical error in main: {str(e)}")
         raise
+    finally:
+        logout()  # Завершаем соединение при выходе
     logger.info("Bot main function ended.")
 
 if __name__ == '__main__':

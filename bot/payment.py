@@ -1,12 +1,12 @@
 #payment.py
 from telebot.types import LabeledPrice
 from bot.bot import bot
-from const_bot import CURRENCY
+from const.const_bot import CURRENCY
 from utils import json_fun
 from utils.logging_utils import log_function_call, setup_logger
 from utils.config import BOT_TEST_PROVIDER_TOKEN, BOT_LIVE_PROVIDER_TOKEN, BOT_ADMIN_IDS
 
-logger = setup_logger('payments', 'bot.log')
+logger = setup_logger('payments', 'payment.log')
 
 @log_function_call(logger)
 async def buy(message, product):
@@ -77,6 +77,7 @@ async def successful_payment(message):
             payment_info = message.successful_payment
             payment_amount = payment_info.total_amount // 100
             payment_currency = payment_info.currency
+            payment_payload = payment_info.invoice_payload
         except AttributeError as e:
             logger.error(f"Error retrieving payment information for tg_id={tg_id}: {str(e)}")
             raise
@@ -91,10 +92,17 @@ async def successful_payment(message):
             text=f'✅ Ожидайте в течение 3-х дней, мы вам напишем благодарственное сообщение.\n'
         )
         
-        await bot.send_message(
-            chat_id=BOT_ADMIN_IDS[1],
-            text=f'Оплата в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
-        )
+        if payment_payload.startswith('D'):
+            await bot.send_message(
+                chat_id=BOT_ADMIN_IDS[1],
+                text=f'Оплата пожертвования в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
+            )
+            
+        if payment_payload.startswith('S'):
+            await bot.send_message(
+                chat_id=BOT_ADMIN_IDS[1],
+                text=f'Оплата подписки в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
+            )
         
         await send_main_menu(message)
 
