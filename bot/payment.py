@@ -90,25 +90,28 @@ async def successful_payment(message):
             chat_id=tg_id,
             text=f'✅ Платёж на {payment_amount} {payment_currency} прошёл успешно!\n'
         )
-
-        await bot.send_message(
-            chat_id=tg_id,
-            text=f'✅ Ожидайте в течение 3-х дней, мы вам напишем благодарственное сообщение.\n'
-        )
-        
+            
         if payment_payload.startswith('D'):
             await bot.send_message(
                 chat_id=BOT_ADMIN_IDS[1],
                 text=f'Оплата пожертвования в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
             )
+            await bot.send_message(
+            chat_id=tg_id,
+            text=f'✅ Ожидайте в течение 3-х дней, мы вам напишем благодарственное сообщение.\n'
+            )
             
         if payment_payload.startswith('S'):
-            await subscription_handler(payment_payload, payment_amount, payment_currency, tg_id)
-            
-            await bot.send_message(
+            try:
+                await subscription_handler(payment_payload, payment_amount, payment_currency, tg_id)
+                
+                await bot.send_message(
                 chat_id=BOT_ADMIN_IDS[1],
                 text=f'Оплата подписки в размере {payment_amount} {payment_currency} от @{username} ({tg_id}).'
             )
+            except Exception as e:
+                logger.error(f"Error handling subscription payment for tg_id={tg_id}: {str(e)}")
+
         
         await send_main_menu(message)
 

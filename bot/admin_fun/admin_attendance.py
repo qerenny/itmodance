@@ -102,3 +102,19 @@ async def handle_stats_callback(call):
     stats_text = build_attendance_stats_string(lesson_id)
     await bot.answer_callback_query(call.id)
     await bot.send_message(call.message.chat.id, stats_text)
+
+@bot.message_handler(commands=['attendance_stats'])
+@log_function_call(logger)
+async def attendance_stats_command(message):
+    """
+    Команда для администратора: /attendance_stats
+    Отправляет сообщение с кнопками для выбора будущего занятия, по которому нужно получить статистику.
+    """
+    chat_id = message.chat.id
+    # Можно проверить, что отправитель – администратор:
+    from utils.config import BOT_ADMIN_IDS
+    if message.from_user.id not in BOT_ADMIN_IDS:
+        await bot.send_message(chat_id, "У вас нет прав для выполнения этой команды.")
+        return
+
+    await send_future_lessons_for_stats(chat_id)
